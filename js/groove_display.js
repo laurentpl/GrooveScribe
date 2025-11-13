@@ -262,7 +262,7 @@ if (typeof(GrooveDisplay) === "undefined") {
 		// showPlayer:  true/false   true to add the sound player to the page along with the sheet music
 		// linkToEditor: true/false  true to add a link back to Groove Scribe on the sheet music
 		// expandPlayer: true/false  true to have the sound player be full width by default.
-		root.AddGrooveDisplayToPage = function (URLEncodedGrooveData, showPlayer, linkToEditor, expandPlayer) {
+		root.AddGrooveDisplayToPage = function (URLEncodedGrooveData, showPlayer, linkToEditor, expandPlayer, elementIdToAttachTo) {
 			root.GrooveDisplayUniqueCounter++;
 
 			// add an html Element to hold the grooveDisplay
@@ -270,7 +270,12 @@ if (typeof(GrooveDisplay) === "undefined") {
 			var GrooveDisplayElement = document.createElement("div");
 			GrooveDisplayElement.class = "GrooveDisplay";
 			GrooveDisplayElement.id = HTMLElementID;
-			document.getElementsByTagName("body")[0].appendChild(GrooveDisplayElement);
+			
+			if(elementIdToAttachTo) {
+				document.getElementById(elementIdToAttachTo).appendChild(GrooveDisplayElement);
+			} else {
+				document.getElementsByTagName("body")[0].appendChild(GrooveDisplayElement);
+			}
 
 			window.addEventListener("load", function () {
 				root.AddGrooveDisplayToElementId(HTMLElementID, URLEncodedGrooveData, showPlayer, linkToEditor, expandPlayer);

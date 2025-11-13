@@ -70,7 +70,7 @@ var constant_ABC_OFF = false;
 
 var constant_OUR_MIDI_VELOCITY_NORMAL = 85;
 var constant_OUR_MIDI_VELOCITY_ACCENT = 120;
-var constant_OUR_MIDI_VELOCITY_GHOST = 50;
+var constant_OUR_MIDI_VELOCITY_GHOST = 90;
 var constant_OUR_MIDI_METRONOME_1 = 76;
 var constant_OUR_MIDI_METRONOME_NORMAL = 77;
 var constant_OUR_MIDI_HIHAT_NORMAL = 42;
