@@ -892,6 +892,26 @@
 	.noteContextMenu>ul.list li:last-child {
 		border:none;
 	}
+	/* Context menu search input */
+	.context-menu-search {
+		width: calc(100% - 20px);
+		padding: 8px 10px;
+		margin: 0;
+		border: none;
+		border-bottom: 2px solid #393939;
+		background: #ffffff;
+		font-size: 14px;
+		outline: none;
+		box-sizing: border-box;
+	}
+	.context-menu-search:focus {
+		border-bottom-color: #ff8c00;
+	}
+	/* Highlighted menu item */
+	.context-menu-selected {
+		background: #ff8c00 !important;
+		color: #ffffff !important;
+	}
 	#grooveListWrapper {
 		display: none;
 		position: fixed;

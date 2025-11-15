@@ -279,6 +279,22 @@ function GrooveUtils() {
 			root.hideContextMenu(root.visible_context_menu);
 		}
 
+		// Add search input if not already present
+		var ul = contextMenu.querySelector('ul');
+		var searchInput = contextMenu.querySelector('.context-menu-search');
+		if (!searchInput && ul) {
+			searchInput = document.createElement('input');
+			searchInput.type = 'text';
+			searchInput.className = 'context-menu-search';
+			searchInput.placeholder = 'Type to filter...';
+			contextMenu.insertBefore(searchInput, ul);
+
+			// Initialize menu items data
+			var items = ul.querySelectorAll('li');
+			contextMenu._menuItems = Array.from(items);
+			contextMenu._selectedIndex = 0;
+		}
+
 		contextMenu.style.display = "block";
 		root.visible_context_menu = contextMenu;
 
@@ -295,6 +311,28 @@ function GrooveUtils() {
 			document.onclick = root.documentOnClickHanderCloseContextMenu;
 			document.body.style.cursor = "pointer"; // make document.onclick work on iPad
 
+			// Focus the search input and setup event handlers
+			if (searchInput) {
+				searchInput.value = '';
+				contextMenu._selectedIndex = 0;
+				root.updateContextMenuHighlight(contextMenu);
+				searchInput.focus();
+
+				// Remove old event listeners if they exist
+				var newInput = searchInput.cloneNode(true);
+				searchInput.parentNode.replaceChild(newInput, searchInput);
+				searchInput = newInput;
+
+				// Add event listeners
+				searchInput.addEventListener('input', function() {
+					root.filterContextMenu(contextMenu, this.value);
+				});
+
+				searchInput.addEventListener('keydown', function(e) {
+					root.handleContextMenuKeydown(contextMenu, e);
+				});
+			}
+
 		}, 100);
 	};
 
@@ -307,6 +345,86 @@ function GrooveUtils() {
 			contextMenu.style.display = "none";
 		}
 		root.visible_context_menu = false;
+	};
+
+	// Filter context menu items based on search query
+	root.filterContextMenu = function (contextMenu, query) {
+		var ul = contextMenu.querySelector('ul');
+		if (!ul || !contextMenu._menuItems) return;
+
+		var visibleItems = [];
+		query = query.toLowerCase();
+
+		contextMenu._menuItems.forEach(function(item) {
+			var text = item.textContent.toLowerCase();
+			if (text.indexOf(query) !== -1) {
+				item.style.display = '';
+				visibleItems.push(item);
+			} else {
+				item.style.display = 'none';
+			}
+		});
+
+		// Update visible items list and reset selection to first visible item
+		contextMenu._visibleItems = visibleItems;
+		contextMenu._selectedIndex = 0;
+		root.updateContextMenuHighlight(contextMenu);
+	};
+
+	// Update the highlighted item in the context menu
+	root.updateContextMenuHighlight = function (contextMenu) {
+		if (!contextMenu._menuItems) return;
+
+		var visibleItems = contextMenu._visibleItems || contextMenu._menuItems;
+
+		// Remove highlight from all items
+		contextMenu._menuItems.forEach(function(item) {
+			item.classList.remove('context-menu-selected');
+		});
+
+		// Add highlight to selected item
+		if (visibleItems.length > 0) {
+			var selectedItem = visibleItems[contextMenu._selectedIndex];
+			if (selectedItem) {
+				selectedItem.classList.add('context-menu-selected');
+				// Scroll into view if needed
+				selectedItem.scrollIntoView({ block: 'nearest' });
+			}
+		}
+	};
+
+	// Handle keyboard navigation in context menu
+	root.handleContextMenuKeydown = function (contextMenu, event) {
+		var visibleItems = contextMenu._visibleItems || contextMenu._menuItems;
+		if (!visibleItems || visibleItems.length === 0) return;
+
+		switch (event.key) {
+			case 'ArrowDown':
+				event.preventDefault();
+				contextMenu._selectedIndex = (contextMenu._selectedIndex + 1) % visibleItems.length;
+				root.updateContextMenuHighlight(contextMenu);
+				break;
+
+			case 'ArrowUp':
+				event.preventDefault();
+				contextMenu._selectedIndex = (contextMenu._selectedIndex - 1 + visibleItems.length) % visibleItems.length;
+				root.updateContextMenuHighlight(contextMenu);
+				break;
+
+			case 'Enter':
+				event.preventDefault();
+				var selectedItem = visibleItems[contextMenu._selectedIndex];
+				if (selectedItem) {
+					selectedItem.click();
+					root.hideContextMenu(contextMenu);
+				}
+				break;
+
+			case 'Escape':
+				event.preventDefault();
+				root.hideContextMenu(contextMenu);
+				break;
+		}
 	};
 
 	// figure it out from the division  Division is number of notes per measure 4, 6, 8, 12, 16, 24, 32, etc...
