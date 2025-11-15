@@ -161,7 +161,7 @@ function GrooveUtils() {
 		this.kick_array = class_empty_note_array.slice(0);  // copy by value
 		// toms_array contains 4 toms  T1, T2, T3, T4 index starting at zero
 		this.toms_array = [class_empty_note_array.slice(0), class_empty_note_array.slice(0), class_empty_note_array.slice(0), class_empty_note_array.slice(0)];
-		this.showToms = false;
+		this.showToms = true;
 		this.showStickings = false;
 		this.title = "";
 		this.author = "";
