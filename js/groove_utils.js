@@ -333,6 +333,15 @@ function GrooveUtils() {
 			// Focus the search input and setup event handlers
 			if (searchInput) {
 				searchInput.value = '';
+
+				// Reset all items to visible (clear previous filter)
+				if (contextMenu._menuItems) {
+					contextMenu._menuItems.forEach(function(item) {
+						item.style.display = '';
+					});
+					contextMenu._visibleItems = contextMenu._menuItems;
+				}
+
 				contextMenu._selectedIndex = 0;
 				root.updateContextMenuHighlight(contextMenu);
 
