@@ -279,44 +279,48 @@ function GrooveUtils() {
 			root.hideContextMenu(root.visible_context_menu);
 		}
 
-		// Add search input if not already present
-		// contextMenu is the <ul> element, we need to work with its parent
-		var parentDiv = contextMenu.parentNode;
-		var searchInput = parentDiv.querySelector('.context-menu-search');
+		// Add search input if not already present inside the <ul>
+		var searchInput = contextMenu.querySelector('.context-menu-search');
 
 		if (!searchInput) {
+			// Create wrapper li for the input
+			var wrapperLi = document.createElement('li');
+			wrapperLi.className = 'context-menu-search-wrapper';
+			wrapperLi.style.padding = '0';
+			wrapperLi.style.border = 'none';
+
 			searchInput = document.createElement('input');
 			searchInput.type = 'text';
 			searchInput.className = 'context-menu-search';
 			searchInput.placeholder = 'Type to filter...';
-			parentDiv.insertBefore(searchInput, contextMenu);
 
-			// Initialize menu items data
-			var items = contextMenu.querySelectorAll('li');
-			contextMenu._menuItems = Array.from(items);
+			wrapperLi.appendChild(searchInput);
+			contextMenu.insertBefore(wrapperLi, contextMenu.firstChild);
+
+			// Initialize menu items data (exclude the search wrapper)
+			var items = Array.from(contextMenu.querySelectorAll('li')).filter(function(li) {
+				return !li.classList.contains('context-menu-search-wrapper');
+			});
+			contextMenu._menuItems = items;
 			contextMenu._selectedIndex = 0;
+
+			// Prevent clicks on input from closing the menu
+			searchInput.addEventListener('click', function(e) {
+				e.stopPropagation();
+			});
+
+			wrapperLi.addEventListener('click', function(e) {
+				e.stopPropagation();
+			});
 		}
 
 		contextMenu.style.display = "block";
 		root.visible_context_menu = contextMenu;
 
-		// Position the search input above the menu
-		if (searchInput) {
-			var ulTop = parseInt(contextMenu.style.top) || 0;
-			var ulLeft = parseInt(contextMenu.style.left) || 0;
-			searchInput.style.top = (ulTop - 40) + 'px';
-			searchInput.style.left = ulLeft + 'px';
-			searchInput.style.display = 'block';
-		}
-
 		// Check for screen visibility of the bottom of the menu
 		if(contextMenu.offsetTop + contextMenu.clientHeight > document.documentElement.clientHeight) {
 			// the menu has gone off the bottom of the screen
 			contextMenu.style.top = document.documentElement.clientHeight - contextMenu.clientHeight + 'px';
-			// Reposition search input if menu was repositioned
-			if (searchInput) {
-				searchInput.style.top = (parseInt(contextMenu.style.top) - 40) + 'px';
-			}
 		}
 
 		// use a timeout to setup the onClick handler.
@@ -331,21 +335,30 @@ function GrooveUtils() {
 				searchInput.value = '';
 				contextMenu._selectedIndex = 0;
 				root.updateContextMenuHighlight(contextMenu);
-				searchInput.focus();
 
 				// Remove old event listeners if they exist
 				var newInput = searchInput.cloneNode(true);
 				searchInput.parentNode.replaceChild(newInput, searchInput);
 				searchInput = newInput;
 
+				// Prevent clicks on new input from closing menu
+				newInput.addEventListener('click', function(e) {
+					e.stopPropagation();
+				});
+
 				// Add event listeners
-				searchInput.addEventListener('input', function() {
+				newInput.addEventListener('input', function() {
 					root.filterContextMenu(contextMenu, this.value);
 				});
 
-				searchInput.addEventListener('keydown', function(e) {
+				newInput.addEventListener('keydown', function(e) {
 					root.handleContextMenuKeydown(contextMenu, e);
 				});
+
+				// Focus after a short delay to ensure it works
+				setTimeout(function() {
+					newInput.focus();
+				}, 10);
 			}
 
 		}, 100);
@@ -358,14 +371,7 @@ function GrooveUtils() {
 
 		if (contextMenu) {
 			contextMenu.style.display = "none";
-			// Hide the search input too
-			var parentDiv = contextMenu.parentNode;
-			if (parentDiv) {
-				var searchInput = parentDiv.querySelector('.context-menu-search');
-				if (searchInput) {
-					searchInput.style.display = 'none';
-				}
-			}
+			// Input is inside the <ul>, so it will be hidden automatically
 		}
 		root.visible_context_menu = false;
 	};

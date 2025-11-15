@@ -895,8 +895,8 @@
 	/* Context menu search input */
 	.noteContextMenu .context-menu-search {
 		display: block;
-		width: 150px;
-		padding: 8px 10px;
+		width: 100%;
+		padding: 10px;
 		margin: 0;
 		border: none;
 		border-bottom: 2px solid #393939;
@@ -904,11 +904,13 @@
 		font-size: 14px;
 		outline: none;
 		box-sizing: border-box;
-		position: fixed;
-		z-index: 1000;
 	}
 	.noteContextMenu .context-menu-search:focus {
 		border-bottom-color: #ff8c00;
+	}
+	.noteContextMenu .context-menu-search-wrapper {
+		padding: 0 !important;
+		border: none !important;
 	}
 	/* Highlighted menu item */
 	.context-menu-selected {
