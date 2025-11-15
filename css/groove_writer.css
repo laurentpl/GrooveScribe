@@ -676,6 +676,25 @@
 		background:#c6e1f7;
 		color: #000;
 	}
+	.grooveListUL .context-menu-search {
+		display: block;
+		width: 100%;
+		padding: 10px;
+		margin: 0;
+		border: none;
+		border-bottom: 2px solid #1765a7;
+		background: #ffffff;
+		font-size: 14px;
+		outline: none;
+		box-sizing: border-box;
+	}
+	.grooveListUL .context-menu-search:focus {
+		border-bottom-color: #004781;
+	}
+	.grooveListUL .context-menu-search-wrapper {
+		padding: 0 !important;
+		border: none !important;
+	}
 	.grooveListHeaderLI {
 		padding:15px;
 		background: #009FFA;

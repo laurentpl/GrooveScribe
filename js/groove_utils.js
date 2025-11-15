@@ -279,8 +279,22 @@ function GrooveUtils() {
 			root.hideContextMenu(root.visible_context_menu);
 		}
 
+		// Determine if contextMenu is a <ul> or a container (like grooveListWrapper)
+		var ul;
+		if (contextMenu.tagName === 'UL') {
+			ul = contextMenu;
+		} else {
+			// It's a container, find the <ul> inside
+			ul = contextMenu.querySelector('ul');
+		}
+
+		if (!ul) {
+			console.error('No <ul> found in context menu');
+			return;
+		}
+
 		// Add search input if not already present inside the <ul>
-		var searchInput = contextMenu.querySelector('.context-menu-search');
+		var searchInput = ul.querySelector('.context-menu-search');
 
 		if (!searchInput) {
 			// Create wrapper li for the input
@@ -295,14 +309,15 @@ function GrooveUtils() {
 			searchInput.placeholder = 'Type to filter...';
 
 			wrapperLi.appendChild(searchInput);
-			contextMenu.insertBefore(wrapperLi, contextMenu.firstChild);
+			ul.insertBefore(wrapperLi, ul.firstChild);
 
-			// Initialize menu items data (exclude the search wrapper)
-			var items = Array.from(contextMenu.querySelectorAll('li')).filter(function(li) {
-				return !li.classList.contains('context-menu-search-wrapper');
+			// Initialize menu items data (exclude the search wrapper and headers)
+			var items = Array.from(ul.querySelectorAll('li')).filter(function(li) {
+				return !li.classList.contains('context-menu-search-wrapper') &&
+				       !li.classList.contains('grooveListHeaderLI');
 			});
-			contextMenu._menuItems = items;
-			contextMenu._selectedIndex = 0;
+			ul._menuItems = items;
+			ul._selectedIndex = 0;
 
 			// Prevent clicks on input from closing the menu
 			searchInput.addEventListener('click', function(e) {
@@ -334,12 +349,12 @@ function GrooveUtils() {
 			if (searchInput) {
 				// Input is already cleared by hideContextMenu (if menu was previously opened)
 				// But ensure it's clear for first-time opening
-				if (!contextMenu._visibleItems) {
-					contextMenu._visibleItems = contextMenu._menuItems;
+				if (!ul._visibleItems) {
+					ul._visibleItems = ul._menuItems;
 				}
 
-				contextMenu._selectedIndex = 0;
-				root.updateContextMenuHighlight(contextMenu);
+				ul._selectedIndex = 0;
+				root.updateContextMenuHighlight(ul);
 
 				// Remove old event listeners if they exist
 				var newInput = searchInput.cloneNode(true);
@@ -353,11 +368,11 @@ function GrooveUtils() {
 
 				// Add event listeners
 				newInput.addEventListener('input', function() {
-					root.filterContextMenu(contextMenu, this.value);
+					root.filterContextMenu(ul, this.value);
 				});
 
 				newInput.addEventListener('keydown', function(e) {
-					root.handleContextMenuKeydown(contextMenu, e);
+					root.handleContextMenuKeydown(ul, e);
 				});
 
 				// Focus after a short delay to ensure it works
@@ -377,22 +392,32 @@ function GrooveUtils() {
 		if (contextMenu) {
 			contextMenu.style.display = "none";
 
-			// Reset filter immediately when closing (not when opening next menu)
-			// This prevents the flash of the old filtered state
-			var searchInput = contextMenu.querySelector('.context-menu-search');
-			if (searchInput) {
-				searchInput.value = '';
+			// Find the <ul> element (might be contextMenu itself or inside it)
+			var ul;
+			if (contextMenu.tagName === 'UL') {
+				ul = contextMenu;
+			} else {
+				ul = contextMenu.querySelector('ul');
 			}
 
-			// Reset all items to visible
-			if (contextMenu._menuItems) {
-				contextMenu._menuItems.forEach(function(item) {
-					item.style.display = '';
-				});
-				contextMenu._visibleItems = contextMenu._menuItems;
-			}
+			if (ul) {
+				// Reset filter immediately when closing (not when opening next menu)
+				// This prevents the flash of the old filtered state
+				var searchInput = ul.querySelector('.context-menu-search');
+				if (searchInput) {
+					searchInput.value = '';
+				}
 
-			contextMenu._selectedIndex = 0;
+				// Reset all items to visible
+				if (ul._menuItems) {
+					ul._menuItems.forEach(function(item) {
+						item.style.display = '';
+					});
+					ul._visibleItems = ul._menuItems;
+				}
+
+				ul._selectedIndex = 0;
+			}
 		}
 		root.visible_context_menu = false;
 	};
