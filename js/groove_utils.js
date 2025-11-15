@@ -332,13 +332,9 @@ function GrooveUtils() {
 
 			// Focus the search input and setup event handlers
 			if (searchInput) {
-				searchInput.value = '';
-
-				// Reset all items to visible (clear previous filter)
-				if (contextMenu._menuItems) {
-					contextMenu._menuItems.forEach(function(item) {
-						item.style.display = '';
-					});
+				// Input is already cleared by hideContextMenu (if menu was previously opened)
+				// But ensure it's clear for first-time opening
+				if (!contextMenu._visibleItems) {
 					contextMenu._visibleItems = contextMenu._menuItems;
 				}
 
@@ -380,7 +376,23 @@ function GrooveUtils() {
 
 		if (contextMenu) {
 			contextMenu.style.display = "none";
-			// Input is inside the <ul>, so it will be hidden automatically
+
+			// Reset filter immediately when closing (not when opening next menu)
+			// This prevents the flash of the old filtered state
+			var searchInput = contextMenu.querySelector('.context-menu-search');
+			if (searchInput) {
+				searchInput.value = '';
+			}
+
+			// Reset all items to visible
+			if (contextMenu._menuItems) {
+				contextMenu._menuItems.forEach(function(item) {
+					item.style.display = '';
+				});
+				contextMenu._visibleItems = contextMenu._menuItems;
+			}
+
+			contextMenu._selectedIndex = 0;
 		}
 		root.visible_context_menu = false;
 	};
