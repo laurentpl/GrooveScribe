@@ -1535,8 +1535,8 @@ function GrooveWriter() {
 
 	root.noteLeftClick = function (event, type, id) {
 
-		// use a popup if advanced edit is on
-		if (class_advancedEditIsOn === true) {
+		// use a popup if advanced edit is on OR if CMD/Ctrl is pressed
+		if (class_advancedEditIsOn === true || event.metaKey || event.ctrlKey) {
 			root.noteRightClick(event, type, id);
 
 		} else {
