@@ -3608,4 +3608,187 @@ function GrooveUtils() {
 		root.swingEnabled(root.doesDivisionSupportSwing(division));
 	};
 
+	// ========== Command Palette (CMD+K) ==========
+
+	root.commandPalette = {
+		modal: null,
+		input: null,
+		results: null,
+		allItems: [],
+		filteredItems: [],
+		selectedIndex: 0,
+
+		init: function() {
+			this.modal = document.getElementById('commandPaletteModal');
+			this.input = document.getElementById('commandPaletteInput');
+			this.results = document.getElementById('commandPaletteResults');
+
+			// Populate with grooves from grooves.js
+			this.populateGrooves();
+
+			// Event listeners
+			var self = this;
+			this.input.addEventListener('input', function() {
+				self.filter(this.value);
+			});
+
+			this.input.addEventListener('keydown', function(e) {
+				self.handleKeydown(e);
+			});
+
+			document.getElementById('commandPaletteBackdrop').addEventListener('click', function() {
+				self.hide();
+			});
+
+			// Global keyboard shortcut (CMD+K or Ctrl+K)
+			document.addEventListener('keydown', function(e) {
+				if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+					e.preventDefault();
+					self.show();
+				}
+			});
+		},
+
+		populateGrooves: function() {
+			// Get grooves from grooves.js FullArray
+			if (typeof grooves !== 'undefined' && grooves.FullArray) {
+				this.allItems = [];
+
+				for (var category in grooves.FullArray) {
+					var categoryGrooves = grooves.FullArray[category];
+
+					for (var name in categoryGrooves) {
+						this.allItems.push({
+							name: name,
+							category: category,
+							url: categoryGrooves[name]
+						});
+					}
+				}
+			}
+		},
+
+		show: function() {
+			this.modal.style.display = 'block';
+			this.input.value = '';
+			this.filter('');
+			setTimeout(function() {
+				root.commandPalette.input.focus();
+			}, 10);
+		},
+
+		hide: function() {
+			this.modal.style.display = 'none';
+		},
+
+		filter: function(query) {
+			query = query.toLowerCase();
+
+			if (!query) {
+				this.filteredItems = this.allItems.slice();
+			} else {
+				this.filteredItems = this.allItems.filter(function(item) {
+					return item.name.toLowerCase().indexOf(query) !== -1 ||
+					       item.category.toLowerCase().indexOf(query) !== -1;
+				});
+			}
+
+			this.selectedIndex = 0;
+			this.render();
+		},
+
+		render: function() {
+			var html = '';
+			var currentCategory = null;
+			var self = this;
+
+			this.filteredItems.forEach(function(item, index) {
+				// Add category header if it changes
+				if (item.category !== currentCategory) {
+					currentCategory = item.category;
+					html += '<div class="commandPaletteCategory">' + item.category + '</div>';
+				}
+
+				// Add item
+				var selectedClass = index === self.selectedIndex ? 'selected' : '';
+				html += '<div class="commandPaletteItem ' + selectedClass + '" data-index="' + index + '">' +
+				        item.name + '</div>';
+			});
+
+			if (html === '') {
+				html = '<div class="commandPaletteItem">No results found</div>';
+			}
+
+			this.results.innerHTML = html;
+
+			// Add click handlers
+			var items = this.results.querySelectorAll('.commandPaletteItem[data-index]');
+			items.forEach(function(el) {
+				el.addEventListener('click', function() {
+					var index = parseInt(this.getAttribute('data-index'));
+					self.selectItem(index);
+				});
+			});
+
+			// Scroll selected item into view
+			if (this.filteredItems.length > 0) {
+				var selectedEl = this.results.querySelector('.commandPaletteItem.selected');
+				if (selectedEl) {
+					selectedEl.scrollIntoView({ block: 'nearest' });
+				}
+			}
+		},
+
+		handleKeydown: function(e) {
+			switch (e.key) {
+				case 'ArrowDown':
+					e.preventDefault();
+					this.selectedIndex = (this.selectedIndex + 1) % this.filteredItems.length;
+					this.render();
+					break;
+
+				case 'ArrowUp':
+					e.preventDefault();
+					this.selectedIndex = (this.selectedIndex - 1 + this.filteredItems.length) % this.filteredItems.length;
+					this.render();
+					break;
+
+				case 'Enter':
+					e.preventDefault();
+					if (this.filteredItems.length > 0) {
+						this.selectItem(this.selectedIndex);
+					}
+					break;
+
+				case 'Escape':
+					e.preventDefault();
+					this.hide();
+					break;
+			}
+		},
+
+		selectItem: function(index) {
+			if (index >= 0 && index < this.filteredItems.length) {
+				var item = this.filteredItems[index];
+
+				// Load the groove using GrooveWriter's loadNewGroove function
+				if (typeof myGrooveWriter !== 'undefined' && myGrooveWriter.loadNewGroove) {
+					myGrooveWriter.loadNewGroove(item.url);
+				}
+
+				this.hide();
+			}
+		}
+	};
+
+	// Initialize command palette when DOM is ready
+	if (document.readyState === 'loading') {
+		document.addEventListener('DOMContentLoaded', function() {
+			root.commandPalette.init();
+		});
+	} else {
+		// DOM is already loaded
+		root.commandPalette.init();
+	}
+
 } // end of class
