@@ -893,8 +893,9 @@
 		border:none;
 	}
 	/* Context menu search input */
-	.context-menu-search {
-		width: calc(100% - 20px);
+	.noteContextMenu .context-menu-search {
+		display: block;
+		width: 150px;
 		padding: 8px 10px;
 		margin: 0;
 		border: none;
@@ -903,8 +904,10 @@
 		font-size: 14px;
 		outline: none;
 		box-sizing: border-box;
+		position: fixed;
+		z-index: 1000;
 	}
-	.context-menu-search:focus {
+	.noteContextMenu .context-menu-search:focus {
 		border-bottom-color: #ff8c00;
 	}
 	/* Highlighted menu item */

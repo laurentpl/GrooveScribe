@@ -280,17 +280,19 @@ function GrooveUtils() {
 		}
 
 		// Add search input if not already present
-		var ul = contextMenu.querySelector('ul');
-		var searchInput = contextMenu.querySelector('.context-menu-search');
-		if (!searchInput && ul) {
+		// contextMenu is the <ul> element, we need to work with its parent
+		var parentDiv = contextMenu.parentNode;
+		var searchInput = parentDiv.querySelector('.context-menu-search');
+
+		if (!searchInput) {
 			searchInput = document.createElement('input');
 			searchInput.type = 'text';
 			searchInput.className = 'context-menu-search';
 			searchInput.placeholder = 'Type to filter...';
-			contextMenu.insertBefore(searchInput, ul);
+			parentDiv.insertBefore(searchInput, contextMenu);
 
 			// Initialize menu items data
-			var items = ul.querySelectorAll('li');
+			var items = contextMenu.querySelectorAll('li');
 			contextMenu._menuItems = Array.from(items);
 			contextMenu._selectedIndex = 0;
 		}
@@ -298,10 +300,23 @@ function GrooveUtils() {
 		contextMenu.style.display = "block";
 		root.visible_context_menu = contextMenu;
 
+		// Position the search input above the menu
+		if (searchInput) {
+			var ulTop = parseInt(contextMenu.style.top) || 0;
+			var ulLeft = parseInt(contextMenu.style.left) || 0;
+			searchInput.style.top = (ulTop - 40) + 'px';
+			searchInput.style.left = ulLeft + 'px';
+			searchInput.style.display = 'block';
+		}
+
 		// Check for screen visibility of the bottom of the menu
 		if(contextMenu.offsetTop + contextMenu.clientHeight > document.documentElement.clientHeight) {
 			// the menu has gone off the bottom of the screen
 			contextMenu.style.top = document.documentElement.clientHeight - contextMenu.clientHeight + 'px';
+			// Reposition search input if menu was repositioned
+			if (searchInput) {
+				searchInput.style.top = (parseInt(contextMenu.style.top) - 40) + 'px';
+			}
 		}
 
 		// use a timeout to setup the onClick handler.
@@ -343,14 +358,21 @@ function GrooveUtils() {
 
 		if (contextMenu) {
 			contextMenu.style.display = "none";
+			// Hide the search input too
+			var parentDiv = contextMenu.parentNode;
+			if (parentDiv) {
+				var searchInput = parentDiv.querySelector('.context-menu-search');
+				if (searchInput) {
+					searchInput.style.display = 'none';
+				}
+			}
 		}
 		root.visible_context_menu = false;
 	};
 
 	// Filter context menu items based on search query
 	root.filterContextMenu = function (contextMenu, query) {
-		var ul = contextMenu.querySelector('ul');
-		if (!ul || !contextMenu._menuItems) return;
+		if (!contextMenu._menuItems) return;
 
 		var visibleItems = [];
 		query = query.toLowerCase();
