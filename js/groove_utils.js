@@ -35,9 +35,9 @@ var global_midiInitialized = false;
 // global constants
 var constant_MAX_MEASURES = 10;
 var constant_DEFAULT_TEMPO = 80;
-var constant_ABC_STICK_R = '"R"x';
-var constant_ABC_STICK_L = '"L"x';
-var constant_ABC_STICK_BOTH = '"R/L"x';
+var constant_ABC_STICK_R = '"□"x';
+var constant_ABC_STICK_L = '"●"x';
+var constant_ABC_STICK_BOTH = '"□/●"x';
 var constant_ABC_STICK_COUNT = '"count"x';
 var constant_ABC_STICK_OFF = '""x';
 var constant_ABC_HH_Ride = "^A'";
