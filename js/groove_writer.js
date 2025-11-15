@@ -652,9 +652,8 @@ function GrooveWriter() {
 
 		switch (new_state) {
 			case "off":
-				// show them all greyed out.
+				// show only right greyed out.
 				document.getElementById("sticking_right" + id).style.color = constant_sticking_right_off_color_rgb;
-				document.getElementById("sticking_left" + id).style.color = constant_sticking_left_off_color_rgb;
 				break;
 			case "right":
 				document.getElementById("sticking_right" + id).style.color = constant_sticking_right_on_color_rgb;
