@@ -35,9 +35,9 @@ var global_midiInitialized = false;
 // global constants
 var constant_MAX_MEASURES = 10;
 var constant_DEFAULT_TEMPO = 80;
-var constant_ABC_STICK_R = '"R"x';
-var constant_ABC_STICK_L = '"L"x';
-var constant_ABC_STICK_BOTH = '"R/L"x';
+var constant_ABC_STICK_R = '"\u25A1"x';
+var constant_ABC_STICK_L = '"\u25CF"x';
+var constant_ABC_STICK_BOTH = '"\u25A1/\u25CF"x';
 var constant_ABC_STICK_COUNT = '"count"x';
 var constant_ABC_STICK_OFF = '""x';
 var constant_ABC_HH_Ride = "^A'";
@@ -161,7 +161,7 @@ function GrooveUtils() {
 		this.kick_array = class_empty_note_array.slice(0);  // copy by value
 		// toms_array contains 4 toms  T1, T2, T3, T4 index starting at zero
 		this.toms_array = [class_empty_note_array.slice(0), class_empty_note_array.slice(0), class_empty_note_array.slice(0), class_empty_note_array.slice(0)];
-		this.showToms = false;
+		this.showToms = true;
 		this.showStickings = false;
 		this.title = "";
 		this.author = "";
@@ -279,6 +279,56 @@ function GrooveUtils() {
 			root.hideContextMenu(root.visible_context_menu);
 		}
 
+		// Determine if contextMenu is a <ul> or a container (like grooveListWrapper)
+		var ul;
+		if (contextMenu.tagName === 'UL') {
+			ul = contextMenu;
+		} else {
+			// It's a container, find the <ul> inside
+			ul = contextMenu.querySelector('ul');
+		}
+
+		if (!ul) {
+			console.error('No <ul> found in context menu');
+			return;
+		}
+
+		// Add search input if not already present inside the <ul>
+		var searchInput = ul.querySelector('.context-menu-search');
+
+		if (!searchInput) {
+			// Create wrapper li for the input
+			var wrapperLi = document.createElement('li');
+			wrapperLi.className = 'context-menu-search-wrapper';
+			wrapperLi.style.padding = '0';
+			wrapperLi.style.border = 'none';
+
+			searchInput = document.createElement('input');
+			searchInput.type = 'text';
+			searchInput.className = 'context-menu-search';
+			searchInput.placeholder = 'Type to filter...';
+
+			wrapperLi.appendChild(searchInput);
+			ul.insertBefore(wrapperLi, ul.firstChild);
+
+			// Initialize menu items data (exclude the search wrapper and headers)
+			var items = Array.from(ul.querySelectorAll('li')).filter(function(li) {
+				return !li.classList.contains('context-menu-search-wrapper') &&
+				       !li.classList.contains('grooveListHeaderLI');
+			});
+			ul._menuItems = items;
+			ul._selectedIndex = 0;
+
+			// Prevent clicks on input from closing the menu
+			searchInput.addEventListener('click', function(e) {
+				e.stopPropagation();
+			});
+
+			wrapperLi.addEventListener('click', function(e) {
+				e.stopPropagation();
+			});
+		}
+
 		contextMenu.style.display = "block";
 		root.visible_context_menu = contextMenu;
 
@@ -295,6 +345,42 @@ function GrooveUtils() {
 			document.onclick = root.documentOnClickHanderCloseContextMenu;
 			document.body.style.cursor = "pointer"; // make document.onclick work on iPad
 
+			// Focus the search input and setup event handlers
+			if (searchInput) {
+				// Input is already cleared by hideContextMenu (if menu was previously opened)
+				// But ensure it's clear for first-time opening
+				if (!ul._visibleItems) {
+					ul._visibleItems = ul._menuItems;
+				}
+
+				ul._selectedIndex = 0;
+				root.updateContextMenuHighlight(ul);
+
+				// Remove old event listeners if they exist
+				var newInput = searchInput.cloneNode(true);
+				searchInput.parentNode.replaceChild(newInput, searchInput);
+				searchInput = newInput;
+
+				// Prevent clicks on new input from closing menu
+				newInput.addEventListener('click', function(e) {
+					e.stopPropagation();
+				});
+
+				// Add event listeners
+				newInput.addEventListener('input', function() {
+					root.filterContextMenu(ul, this.value);
+				});
+
+				newInput.addEventListener('keydown', function(e) {
+					root.handleContextMenuKeydown(ul, e);
+				});
+
+				// Focus after a short delay to ensure it works
+				setTimeout(function() {
+					newInput.focus();
+				}, 10);
+			}
+
 		}, 100);
 	};
 
@@ -305,8 +391,114 @@ function GrooveUtils() {
 
 		if (contextMenu) {
 			contextMenu.style.display = "none";
+
+			// Find the <ul> element (might be contextMenu itself or inside it)
+			var ul;
+			if (contextMenu.tagName === 'UL') {
+				ul = contextMenu;
+			} else {
+				ul = contextMenu.querySelector('ul');
+			}
+
+			if (ul) {
+				// Reset filter immediately when closing (not when opening next menu)
+				// This prevents the flash of the old filtered state
+				var searchInput = ul.querySelector('.context-menu-search');
+				if (searchInput) {
+					searchInput.value = '';
+				}
+
+				// Reset all items to visible
+				if (ul._menuItems) {
+					ul._menuItems.forEach(function(item) {
+						item.style.display = '';
+					});
+					ul._visibleItems = ul._menuItems;
+				}
+
+				ul._selectedIndex = 0;
+			}
 		}
 		root.visible_context_menu = false;
+	};
+
+	// Filter context menu items based on search query
+	root.filterContextMenu = function (contextMenu, query) {
+		if (!contextMenu._menuItems) return;
+
+		var visibleItems = [];
+		query = query.toLowerCase();
+
+		contextMenu._menuItems.forEach(function(item) {
+			var text = item.textContent.toLowerCase();
+			if (text.indexOf(query) !== -1) {
+				item.style.display = '';
+				visibleItems.push(item);
+			} else {
+				item.style.display = 'none';
+			}
+		});
+
+		// Update visible items list and reset selection to first visible item
+		contextMenu._visibleItems = visibleItems;
+		contextMenu._selectedIndex = 0;
+		root.updateContextMenuHighlight(contextMenu);
+	};
+
+	// Update the highlighted item in the context menu
+	root.updateContextMenuHighlight = function (contextMenu) {
+		if (!contextMenu._menuItems) return;
+
+		var visibleItems = contextMenu._visibleItems || contextMenu._menuItems;
+
+		// Remove highlight from all items
+		contextMenu._menuItems.forEach(function(item) {
+			item.classList.remove('context-menu-selected');
+		});
+
+		// Add highlight to selected item
+		if (visibleItems.length > 0) {
+			var selectedItem = visibleItems[contextMenu._selectedIndex];
+			if (selectedItem) {
+				selectedItem.classList.add('context-menu-selected');
+				// Scroll into view if needed
+				selectedItem.scrollIntoView({ block: 'nearest' });
+			}
+		}
+	};
+
+	// Handle keyboard navigation in context menu
+	root.handleContextMenuKeydown = function (contextMenu, event) {
+		var visibleItems = contextMenu._visibleItems || contextMenu._menuItems;
+		if (!visibleItems || visibleItems.length === 0) return;
+
+		switch (event.key) {
+			case 'ArrowDown':
+				event.preventDefault();
+				contextMenu._selectedIndex = (contextMenu._selectedIndex + 1) % visibleItems.length;
+				root.updateContextMenuHighlight(contextMenu);
+				break;
+
+			case 'ArrowUp':
+				event.preventDefault();
+				contextMenu._selectedIndex = (contextMenu._selectedIndex - 1 + visibleItems.length) % visibleItems.length;
+				root.updateContextMenuHighlight(contextMenu);
+				break;
+
+			case 'Enter':
+				event.preventDefault();
+				var selectedItem = visibleItems[contextMenu._selectedIndex];
+				if (selectedItem) {
+					selectedItem.click();
+					root.hideContextMenu(contextMenu);
+				}
+				break;
+
+			case 'Escape':
+				event.preventDefault();
+				root.hideContextMenu(contextMenu);
+				break;
+		}
 	};
 
 	// figure it out from the division  Division is number of notes per measure 4, 6, 8, 12, 16, 24, 32, etc...
@@ -3415,5 +3607,188 @@ function GrooveUtils() {
 		// enable or disable swing
 		root.swingEnabled(root.doesDivisionSupportSwing(division));
 	};
+
+	// ========== Command Palette (CMD+K) ==========
+
+	root.commandPalette = {
+		modal: null,
+		input: null,
+		results: null,
+		allItems: [],
+		filteredItems: [],
+		selectedIndex: 0,
+
+		init: function() {
+			this.modal = document.getElementById('commandPaletteModal');
+			this.input = document.getElementById('commandPaletteInput');
+			this.results = document.getElementById('commandPaletteResults');
+
+			// Populate with grooves from grooves.js
+			this.populateGrooves();
+
+			// Event listeners
+			var self = this;
+			this.input.addEventListener('input', function() {
+				self.filter(this.value);
+			});
+
+			this.input.addEventListener('keydown', function(e) {
+				self.handleKeydown(e);
+			});
+
+			document.getElementById('commandPaletteBackdrop').addEventListener('click', function() {
+				self.hide();
+			});
+
+			// Global keyboard shortcut (CMD+K or Ctrl+K)
+			document.addEventListener('keydown', function(e) {
+				if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+					e.preventDefault();
+					self.show();
+				}
+			});
+		},
+
+		populateGrooves: function() {
+			// Get grooves from grooves.js FullArray
+			if (typeof grooves !== 'undefined' && grooves.FullArray) {
+				this.allItems = [];
+
+				for (var category in grooves.FullArray) {
+					var categoryGrooves = grooves.FullArray[category];
+
+					for (var name in categoryGrooves) {
+						this.allItems.push({
+							name: name,
+							category: category,
+							url: categoryGrooves[name]
+						});
+					}
+				}
+			}
+		},
+
+		show: function() {
+			this.modal.style.display = 'block';
+			this.input.value = '';
+			this.filter('');
+			setTimeout(function() {
+				root.commandPalette.input.focus();
+			}, 10);
+		},
+
+		hide: function() {
+			this.modal.style.display = 'none';
+		},
+
+		filter: function(query) {
+			query = query.toLowerCase();
+
+			if (!query) {
+				this.filteredItems = this.allItems.slice();
+			} else {
+				this.filteredItems = this.allItems.filter(function(item) {
+					return item.name.toLowerCase().indexOf(query) !== -1 ||
+					       item.category.toLowerCase().indexOf(query) !== -1;
+				});
+			}
+
+			this.selectedIndex = 0;
+			this.render();
+		},
+
+		render: function() {
+			var html = '';
+			var currentCategory = null;
+			var self = this;
+
+			this.filteredItems.forEach(function(item, index) {
+				// Add category header if it changes
+				if (item.category !== currentCategory) {
+					currentCategory = item.category;
+					html += '<div class="commandPaletteCategory">' + item.category + '</div>';
+				}
+
+				// Add item
+				var selectedClass = index === self.selectedIndex ? 'selected' : '';
+				html += '<div class="commandPaletteItem ' + selectedClass + '" data-index="' + index + '">' +
+				        item.name + '</div>';
+			});
+
+			if (html === '') {
+				html = '<div class="commandPaletteItem">No results found</div>';
+			}
+
+			this.results.innerHTML = html;
+
+			// Add click handlers
+			var items = this.results.querySelectorAll('.commandPaletteItem[data-index]');
+			items.forEach(function(el) {
+				el.addEventListener('click', function() {
+					var index = parseInt(this.getAttribute('data-index'));
+					self.selectItem(index);
+				});
+			});
+
+			// Scroll selected item into view
+			if (this.filteredItems.length > 0) {
+				var selectedEl = this.results.querySelector('.commandPaletteItem.selected');
+				if (selectedEl) {
+					selectedEl.scrollIntoView({ block: 'nearest' });
+				}
+			}
+		},
+
+		handleKeydown: function(e) {
+			switch (e.key) {
+				case 'ArrowDown':
+					e.preventDefault();
+					this.selectedIndex = (this.selectedIndex + 1) % this.filteredItems.length;
+					this.render();
+					break;
+
+				case 'ArrowUp':
+					e.preventDefault();
+					this.selectedIndex = (this.selectedIndex - 1 + this.filteredItems.length) % this.filteredItems.length;
+					this.render();
+					break;
+
+				case 'Enter':
+					e.preventDefault();
+					if (this.filteredItems.length > 0) {
+						this.selectItem(this.selectedIndex);
+					}
+					break;
+
+				case 'Escape':
+					e.preventDefault();
+					this.hide();
+					break;
+			}
+		},
+
+		selectItem: function(index) {
+			if (index >= 0 && index < this.filteredItems.length) {
+				var item = this.filteredItems[index];
+
+				// Load the groove using GrooveWriter's loadNewGroove function
+				if (typeof myGrooveWriter !== 'undefined' && myGrooveWriter.loadNewGroove) {
+					myGrooveWriter.loadNewGroove(item.url);
+				}
+
+				this.hide();
+			}
+		}
+	};
+
+	// Initialize command palette when DOM is ready
+	if (document.readyState === 'loading') {
+		document.addEventListener('DOMContentLoaded', function() {
+			root.commandPalette.init();
+		});
+	} else {
+		// DOM is already loaded
+		root.commandPalette.init();
+	}
 
 } // end of class

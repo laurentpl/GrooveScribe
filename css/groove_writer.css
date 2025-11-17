@@ -634,6 +634,31 @@
 	.noteContextMenu>ul.list li:last-child {
 		border:none;
 	}
+	/* Context menu search input */
+	.noteContextMenu .context-menu-search {
+		display: block;
+		width: 100%;
+		padding: 10px;
+		margin: 0;
+		border: none;
+		border-bottom: 2px solid #1765a7;
+		background: #ffffff;
+		font-size: 14px;
+		outline: none;
+		box-sizing: border-box;
+	}
+	.noteContextMenu .context-menu-search:focus {
+		border-bottom-color: #004781;
+	}
+	.noteContextMenu .context-menu-search-wrapper {
+		padding: 0 !important;
+		border: none !important;
+	}
+	/* Highlighted menu item */
+	.context-menu-selected {
+		background: #004781 !important;
+		color: #ffffff !important;
+	}
 	#grooveListWrapper {
 		display: none;
 		position: fixed;
@@ -651,6 +676,25 @@
 		background:#c6e1f7;
 		color: #000;
 	}
+	.grooveListUL .context-menu-search {
+		display: block;
+		width: 100%;
+		padding: 10px;
+		margin: 0;
+		border: none;
+		border-bottom: 2px solid #1765a7;
+		background: #ffffff;
+		font-size: 14px;
+		outline: none;
+		box-sizing: border-box;
+	}
+	.grooveListUL .context-menu-search:focus {
+		border-bottom-color: #004781;
+	}
+	.grooveListUL .context-menu-search-wrapper {
+		padding: 0 !important;
+		border: none !important;
+	}
 	.grooveListHeaderLI {
 		padding:15px;
 		background: #009FFA;
@@ -665,6 +709,70 @@
 	.grooveListLI:hover {
 		background: #004781;
 		color: #FFF;
+	}
+	/* Command Palette Modal (CMD+K) */
+	#commandPaletteModal {
+		position: fixed;
+		top: 0;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		z-index: 10000;
+	}
+	#commandPaletteBackdrop {
+		position: absolute;
+		top: 0;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		background: rgba(0, 0, 0, 0.5);
+	}
+	#commandPaletteContainer {
+		position: absolute;
+		top: 20%;
+		left: 50%;
+		transform: translateX(-50%);
+		width: 600px;
+		max-width: 90%;
+		background: #ffffff;
+		border-radius: 8px;
+		box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+		overflow: hidden;
+	}
+	#commandPaletteInput {
+		width: 100%;
+		padding: 16px 20px;
+		font-size: 16px;
+		border: none;
+		border-bottom: 2px solid #1765a7;
+		outline: none;
+		box-sizing: border-box;
+	}
+	#commandPaletteInput:focus {
+		border-bottom-color: #004781;
+	}
+	#commandPaletteResults {
+		max-height: 400px;
+		overflow-y: auto;
+		background: #c6e1f7;
+	}
+	.commandPaletteCategory {
+		padding: 12px 20px;
+		background: #004781;
+		color: #ffffff;
+		font-size: 14px;
+		font-weight: bold;
+		text-transform: uppercase;
+	}
+	.commandPaletteItem {
+		padding: 12px 20px;
+		border-bottom: 1px solid #1765a7;
+		cursor: pointer;
+		color: #000;
+	}
+	.commandPaletteItem:hover, .commandPaletteItem.selected {
+		background: #004781;
+		color: #ffffff;
 	}
 	hr {
 		width: 795px;
